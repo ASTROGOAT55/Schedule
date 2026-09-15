@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Schedule Tracker</title>
+  
+  <style>
+    /* Color Variables (Light Theme Default) */
+    :root {
+      --bg-color: #f4f6f8;
+      --card-bg: #ffffff;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --border-color: #e5e7eb;
+      --accent-color: #2563eb;
+      --accent-light: #dbeafe;
+      --active-border: #2563eb;
+    }
+
+    /* Dark Mode Color Overrides */
+    body.dark-theme {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: #334155;
+      --accent-color: #3b82f6;
+      --accent-light: #1e3a8a;
+      --active-border: #60a5fa;
+    }
+
+    /* Global Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 2rem 1rem;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .schedule-container {
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    /* Header & Dark Mode Button */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .theme-btn {
+      background: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .theme-btn:hover {
+      opacity: 0.8;
+    }
+
+    /* Top Live Status Card */
+    .status-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    #current-clock {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    .status-badge {
+      background-color: var(--accent-light);
+      color: var(--accent-color);
+      padding: 0.3rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .countdown-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .timer-box {
+      background-color: var(--bg-color);
+      padding: 0.75rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .timer-box small {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .timer-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      width: 100%;
+      height: 8px;
+      background-color: var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background-color: var(--accent-color);
+      transition: width 0.4s ease;
+    }
+
+    /* Schedule List & Cards */
+    .schedule-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .class-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .card-time {
+      font-weight: 700;
+      font-family: monospace;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .card-info h3 {
+      font-size: 1.05rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .card-info p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Active Class Highlight Styling */
+    .class-card.active-class {
+      border: 2px solid var(--active-border);
+      transform: scale(1.02);
+    }
+
+    .class-card.active-class .card-time {
+      color: var(--accent-color);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="schedule-container">
+    
+    <!-- Top Bar with Header and Dark Mode Toggle -->
+    <div class="header-bar">
+      <h1>School Schedule</h1>
+      <button id="theme-toggle" class="theme-btn">🌙 Dark Mode</button>
+    </div>
+
+    <!-- Live Status Banner -->
+    <div class="status-card">
+      <div class="status-header">
+        <span id="current-clock">00:00:00</span>
+        <span id="active-status-tag" class="status-badge">Checking...</span>
+      </div>
+      
+      <!-- Time Left Displays -->
+      <div class="countdown-group">
+        <div class="timer-box">
+          <small>Time Left in Current Class</small>
+          <div id="class-countdown" class="timer-text">--:--</div>
+        </div>
+        <div class="timer-box">
+          <small>Time Left in School Day</small>
+          <div id="day-countdown" class="timer-text">--:--</div>
+        </div>
+      </div>
+
+      <!-- School Day Progress Bar -->
+      <div class="progress-container">
+        <div id="day-progress" class="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Schedule List (Times are set in 24-Hour HH:MM format) -->
+    <div class="schedule-list">
+      
+      <div class="class-card" data-start="08:00" data-end="08:50">
+        <div class="card-time">08:00 - 08:50</div>
+        <div class="card-info">
+          <h3>Period 1: Mathematics</h3>
+          <p>Room 101 • Mr. Davis</p>
+        </div>
+      </div>
+
+      <div class="class-card" data-start="09:00" data-end="09:50">
+        <div class="card-time">09:00 - 09:50</div>
+        <div class="card-info">
+          <h3>Period 2: History</h3>
+          <p>Room 204 • Ms. Johnson</p>
+        </div>
+      </div>
+
+      <div class="class-card" data-start="10:00" data-end="10:50">
+        <div class="card-time">10:00 - 10:50</div>
+        <div class="card-info">
+          <h3>Period 3: Science</h3>
+          <p>Lab B • Dr. Smith</p>
+        </div>
+      </div>
+
+      <div class="class-card" data-start="11:00" data-end="11:40">
+        <div class="card-time">11:00 - 11:40</div>
+        <div class="card-info">
+          <h3>Lunch Break</h3>
+          <p>Cafeteria</p>
+        </div>
+      </div>
+
+      <div class="class-card" data-start="11:45" data-end="12:35">
+        <div class="card-time">11:45 - 12:35</div>
+        <div class="card-info">
+          <h3>Period 4: English Literature</h3>
+          <p>Room 108 • Mrs. Gable</p>
+        </div>
+      </div>
+
+      <div class="class-card" data-start="12:40" data-end="13:30">
+        <div class="card-time">12:40 - 13:30</div>
+        <div class="card-info">
+          <h3>Period 5: Physical Education</h3>
+          <p>Gymnasium • Coach Miller</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Dark Mode Toggle Logic
+    const themeBtn = document.getElementById('theme-toggle');
+
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark-theme');
+      themeBtn.innerText = '☀️ Light Mode';
+    }
+
+    themeBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-theme');
+      const isDark = document.body.classList.contains('dark-theme');
+      themeBtn.innerText = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    });
+
+    // Convert "HH:MM" 24-hour string into minutes from midnight
+    function timeToMinutes(timeStr) {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    }
+
+    // Convert remaining total seconds to MM:SS format
+    function formatCountdown(totalSeconds) {
+      if (totalSeconds < 0) return "00:00";
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = totalSeconds % 60;
+      return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    // Main Tracker Loop
+    function updateScheduleTracker() {
+      const now = new Date();
+      
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      
+      // 1. Update 24-Hour Digital Clock Display
+      document.getElementById('current-clock').innerText = `${hours}:${minutes}:${seconds}`;
+
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const currentTotalSeconds = currentMinutes * 60 + now.getSeconds();
+
+      const classCards = document.querySelectorAll('.class-card');
+      
+      let activeCard = null;
+      let dayStartMinutes = Infinity;
+      let dayEndMinutes = 0;
+
+      classCards.forEach(card => card.classList.remove('active-class'));
+
+      // 2. Loop through classes to find active class & school day boundaries
+      classCards.forEach(card => {
+        const startMins = timeToMinutes(card.dataset.start);
+        const endMins = timeToMinutes(card.dataset.end);
+
+        if (startMins < dayStartMinutes) dayStartMinutes = startMins;
+        if (endMins > dayEndMinutes) dayEndMinutes = endMins;
+
+        if (currentMinutes >= startMins && currentMinutes < endMins) {
+          activeCard = card;
+          card.classList.add('active-class');
+        }
+      });
+
+      const statusTag = document.getElementById('active-status-tag');
+      const classTimer = document.getElementById('class-countdown');
+      const dayTimer = document.getElementById('day-countdown');
+      const progressBar = document.getElementById('day-progress');
+
+      // 3. Update Class Countdown & Status Badge
+      if (activeCard) {
+        statusTag.innerText = "Class in Session";
+        const endMins = timeToMinutes(activeCard.dataset.end);
+        const secondsRemainingInClass = (endMins * 60) - currentTotalSeconds;
+        classTimer.innerText = formatCountdown(secondsRemainingInClass);
+      } else {
+        statusTag.innerText = "Passing / Off Duty";
+        classTimer.innerText = "--:--";
+      }
+
+      // 4. Update Day Countdown & Progress Bar
+      const dayStartSecs = dayStartMinutes * 60;
+      const dayEndSecs = dayEndMinutes * 60;
+
+      if (currentTotalSeconds < dayStartSecs) {
+        dayTimer.innerText = "Not Started";
+        progressBar.style.width = "0%";
+      } else if (currentTotalSeconds >= dayEndSecs) {
+        dayTimer.innerText = "Day Complete";
+        progressBar.style.width = "100%";
+      } else {
+        const secondsLeftInDay = dayEndSecs - currentTotalSeconds;
+        dayTimer.innerText = formatCountdown(secondsLeftInDay);
+
+        const totalDayDuration = dayEndSecs - dayStartSecs;
+        const elapsedSeconds = currentTotalSeconds - dayStartSecs;
+        const progressPercent = Math.min(100, Math.max(0, (elapsedSeconds / totalDayDuration) * 100));
+        
+        progressBar.style.width = `${progressPercent}%`;
+      }
+    }
+
+    // Run loop every 1 second
+    setInterval(updateScheduleTracker, 1000);
+    updateScheduleTracker();
+  </script>
+</body>
+</html>
